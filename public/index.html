@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космический Чат</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 200px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #ddd;
+        }
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+        .search-container {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            background: #f8f9fa;
+            position: relative;
+        }
+        .search-container input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #999;
+            display: none;
+        }
+        .clear-search:hover {
+            color: #666;
+        }
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        .message {
+            position: relative;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f1f1f1;
+        }
+        .message.own-message {
+            background: #e3f2fd;
+        }
+        .message .user {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .message .time {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+        }
+        input {
+            width: calc(100% - 22px);
+        }
+        button {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .room {
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .room:hover, .room.active {
+            background: #34495e;
+        }
+        .user-info {
+            padding: 15px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .avatar {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .username {
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        #logout-btn {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #logout-btn:hover {
+            background: rgba(255, 0, 0, 0.2);
+        }
+        .message-controls {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+        }
+        .message:hover .message-controls {
+            display: block;
+        }
+        .message-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 5px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        .message-controls button:hover {
+            opacity: 1;
+        }
+        .edited-label {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .notification-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        #online-users {
+            margin-top: 20px;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            margin: 3px 0;
+            border-radius: 3px;
+        }
+
+        .user-status.online {
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .user-status.offline {
+            background: rgba(149, 165, 166, 0.1);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background: #2ecc71;
+        }
+
+        .status-indicator.offline {
+            background: #95a5a6;
+        }
+
+        .private-chat {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 3px solid #3498db;
+        }
+
+        .user-status span {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #3498db;
+        }
+
+        .user-status span:hover {
+            color: #2980b9;
+        }
+
+        .message.ai-message {
+            background: #f0f7eb;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .ai-chat {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4CAF50;
+        }
+
+    </style>
+</head>
+<body>
+    <audio id="notification-sound" src="/notification.mp3" preload="auto"></audio>
+    <div class="sidebar">
+        <div class="user-info">
+            <div class="avatar">👨‍🚀</div>
+            <div class="username" id="current-username">Гость</div>
+            <button id="logout-btn">Выйти</button>
+        </div>
+
+        <h2>Комнаты</h2>
+        <div id="rooms">
+            <div class="room active" data-room="general">Общий чат</div>
+            <div class="room" data-room="random">Случайные темы</div>
+            <div class="room" data-room="support">Поддержка</div>
+            <div class="room" data-room="ai_chat">🤖 Чат с ИИ</div>
+        </div>
+
+        <h2>Онлайн пользователи</h2>
+        <div id="online-users"></div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2 id="current-room">Общий чат</h2>
+        </div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Поиск по сообщениям...">
+            <button id="clear-search" class="clear-search">×</button>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Введите сообщение...">
+            <button id="send-button">Отправить</button>
+        </div>
+    </div>
+
+    <script>
+        let privateChats = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            let username = localStorage.getItem('username');
+            if (!username) {
+                try {
+                    const response = await fetch('/profile', {
+                        headers: { 'Authorization': token }
+                    });
+                    const userData = await response.json();
+                    username = userData.username;
+                    localStorage.setItem('username', username);
+                    localStorage.setItem('userId', userData._id);
+                } catch (err) {
+                    console.error('Ошибка получения профиля:', err);
+                    window.location.href = '/';
+                    return;
+                }
+            }
+
+            document.getElementById('current-username').textContent = username;
+
+            let unreadCount = 0;
+            const notificationBadge = document.createElement('div');
+            notificationBadge.className = 'notification-badge';
+            document.body.appendChild(notificationBadge);
+            const notificationSound = document.getElementById('notification-sound');
+
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission().then(permission => {
+                    console.log('Permission for notifications:', permission);
+                });
+            }
+
+            const ws = new WebSocket(`ws://${window.location.hostname}:3000`);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                ws.send(JSON.stringify({
+                    type: 'auth',
+                    userId: localStorage.getItem('userId'),
+                    username: localStorage.getItem('username')
+                }));
+                joinRoom('general');
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            const messagesEl = document.getElementById('messages');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const roomsEl = document.getElementById('rooms');
+            const currentRoomEl = document.getElementById('current-room');
+            const logoutBtn = document.getElementById('logout-btn');
+            const searchInput = document.getElementById('search-input');
+            const clearSearchBtn = document.getElementById('clear-search');
+
+            let currentRoom = 'general';
+
+            setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'heartbeat' }));
+                }
+            }, 15000);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'userStatus') {
+                    updateOnlineUsers(data.users);
+                } else if (data.type === 'message') {
+                    addMessage(data.message);
+                    applySearch();
+
+                    if (data.message.user !== username) {
+                        if (!document.hasFocus() || document.hidden) {
+                            showNotification(data.message);
+                            unreadCount++;
+                            notificationBadge.textContent = unreadCount;
+                            notificationBadge.style.display = 'flex';
+                        }
+                    }
+                } else if (data.type === 'private_message') {
+                    const isChatOpen = Object.keys(privateChats).some(roomId =>
+                        roomId === data.message.room && roomId === currentRoom);
+
+                    if (isChatOpen) {
+                        addMessage(data.message);
+                        applySearch();
+                    } else {
+                        showPrivateMessageNotification(data.message);
+                    }
+                } else if (data.type === 'history') {
+                    messagesEl.innerHTML = '';
+                    data.messages.forEach(msg => addMessage(msg));
+                    applySearch();
+                } else if (data.type === 'delete') {
+                    const messageEl = document.querySelector(`.message[data-id="${data.messageId}"]`);
+                    if (messageEl) {
+                        messageEl.remove();
+                    }
+                } else if (data.type === 'update') {
+                    const messageEl = document.querySelector(`.message[data-id="${data.message._id}"]`);
+                    if (messageEl) {
+                        messageEl.querySelector('.text').textContent = data.message.text;
+                        messageEl.dataset.originalText = data.message.text.toLowerCase();
+                        if (data.message.isEdited && !messageEl.querySelector('.edited-label')) {
+                            const editedLabel = document.createElement('div');
+                            editedLabel.className = 'edited-label';
+                            editedLabel.textContent = '(изменено)';
+                            messageEl.appendChild(editedLabel);
+                        }
+                        applySearch();
+                    }
+                }
+            };
+
+            function updateOnlineUsers(users) {
+                const onlineUsersContainer = document.getElementById('online-users');
+                onlineUsersContainer.innerHTML = '';
+                const currentUserId = localStorage.getItem('userId');
+
+                users.forEach(user => {
+                    if (user.userId === currentUserId) return;
+
+                    const userElement = document.createElement('div');
+                    userElement.className = `user-status ${user.status}`;
+                    userElement.innerHTML = `
+                        <div class="status-indicator ${user.status}"></div>
+                        <span data-user-id="${user.userId}">${user.username}</span>
+                    `;
+                    onlineUsersContainer.appendChild(userElement);
+                });
+
+                document.querySelectorAll('#online-users span').forEach(span => {
+                    span.addEventListener('click', () => {
+                        const userId = span.dataset.userId;
+                        const username = span.textContent;
+                        openPrivateChat(userId, username);
+                    });
+                });
+            }
+
+            function openPrivateChat(userId, username) {
+                const currentUserId = localStorage.getItem('userId');
+                const roomId = `private_${[currentUserId, userId].sort().join('_')}`;
+
+                if (privateChats[roomId]) {
+                    joinRoom(roomId);
+                    return;
+                }
+
+                privateChats[roomId] = { userId, username };
+
+                const roomsContainer = document.getElementById('rooms');
+                const privateChatEl = document.createElement('div');
+                privateChatEl.className = 'room private-chat';
+                privateChatEl.dataset.room = roomId;
+                privateChatEl.innerHTML = `💬 ${username}`;
+                roomsContainer.appendChild(privateChatEl);
+
+                fetch(`/private-messages/${currentUserId}/${userId}`, {
+                    headers: { 'Authorization': localStorage.getItem('token') }
+                })
+                .then(response => response.json())
+                .then(messages => {
+                    joinRoom(roomId);
+                    const messagesEl = document.getElementById('messages');
+                    messagesEl.innerHTML = '';
+                    messages.forEach(msg => addMessage(msg));
+                });
+            }
+
+            function showPrivateMessageNotification(message) {
+                if (Notification.permission === "granted") {
+                    notificationSound.play();
+                    const recipientName = message.user;
+                    const notification = new Notification(`Новое сообщение от ${recipientName}`, {
+                        body: message.text,
+                        icon: '/icon.png'
+                    });
+
+                    notification.onclick = () => {
+                        const parts = message.room.split('_');
+                        const recipientId = parts[2];
+                        const recipientName = message.user;
+                        openPrivateChat(recipientId, recipientName);
+                        window.focus();
+                        notification.close();
+                    };
+                }
+            }
+
+            function showNotification(message) {
+                if (Notification.permission === "granted") {
+                    notificationSound.play();
+                    const notification = new Notification(`Новое сообщение в ${getRoomName(message.room)}`, {
+                        body: `${message.user}: ${message.text}`,
+                        icon: '/icon.png'
+                    });
+
+                    notification.onclick = () => {
+                        window.focus();
+                        notification.close();
+                    };
+                }
+            }
+
+            function getRoomName(room) {
+                if (room.startsWith('private_')) {
+                    const parts = room.split('_');
+                    const currentUserId = localStorage.getItem('userId');
+                    const recipientId = parts[1] === currentUserId ? parts[2] : parts[1];
+                    return `личном чате с ${privateChats[room]?.username || 'пользователем'}`;
+                }
+                return room === 'general' ? 'Общем чате' :
+                       room === 'random' ? 'Случайных темах' : 'Поддержке';
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    unreadCount = 0;
+                    notificationBadge.style.display = 'none';
+                }
+            });
+
+            window.addEventListener('focus', () => {
+                unreadCount = 0;
+                notificationBadge.style.display = 'none';
+            });
+
+            function applySearch() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const messages = document.querySelectorAll('.message');
+
+                messages.forEach(message => {
+                    if (!searchTerm) {
+                        message.style.display = 'block';
+                        return;
+                    }
+
+                    const text = message.dataset.originalText;
+                    const user = message.querySelector('.user').textContent.toLowerCase();
+                    const matches = text.includes(searchTerm) || user.includes(searchTerm);
+                    message.style.display = matches ? 'block' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', (e) => {
+                clearSearchBtn.style.display = e.target.value ? 'block' : 'none';
+                applySearch();
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                clearSearchBtn.style.display = 'none';
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(message => {
+                    message.style.display = 'block';
+                });
+            });
+
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            roomsEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('room')) {
+                    joinRoom(e.target.dataset.room);
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('userId');
+                window.location.href = '/';
+            });
+
+            function sendMessage() {
+                const text = messageInput.value.trim();
+                if (!text) return;
+
+                if (currentRoom === 'ai_chat') {
+                    ws.send(JSON.stringify({
+                        type: 'ai_message',
+                        user: localStorage.getItem('username'),
+                        userId: localStorage.getItem('userId'),
+                        text: text,
+                        token: localStorage.getItem('token')
+                    }));
+                    messageInput.value = '';
+                    return;
+                }
+
+                const isPrivateChat = currentRoom.startsWith('private_');
+
+                if (isPrivateChat) {
+                    const parts = currentRoom.split('_');
+                    const currentUserId = localStorage.getItem('userId');
+                    const recipientId = parts[1] === currentUserId ? parts[2] : parts[1];
+
+                    ws.send(JSON.stringify({
+                        type: 'private_message',
+                        user: localStorage.getItem('username'),
+                        userId: currentUserId,
+                        recipientId: recipientId,
+                        text: text,
+                        room: currentRoom
+                    }));
+                } else {
+                    ws.send(JSON.stringify({
+                        type: 'message',
+                        user: localStorage.getItem('username'),
+                        userId: localStorage.getItem('userId'),
+                        text: text,
+                        room: currentRoom
+                    }));
+                }
+
+                messageInput.value = '';
+            }
+
+            function addMessage(msg) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message';
+                messageEl.dataset.id = msg._id;
+                messageEl.dataset.originalText = msg.text.toLowerCase();
+
+                const isCurrentUser = msg.user === username;
+                if (isCurrentUser) {
+                    messageEl.classList.add('own-message');
+                }
+
+                messageEl.innerHTML = `
+                    <div class="user">${msg.user}</div>
+                    <div class="text">${msg.text}</div>
+                    <div class="time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                `;
+
+                addMessageControls(messageEl, msg, isCurrentUser);
+                messagesEl.appendChild(messageEl);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+
+            function addMessageControls(messageEl, msg, isCurrentUser) {
+                if (isCurrentUser) {
+                    const controls = document.createElement('div');
+                    controls.className = 'message-controls';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'edit-btn';
+                    editBtn.textContent = '✏️';
+                    editBtn.title = 'Редактировать';
+                    editBtn.addEventListener('click', () => editMessage(msg._id, msg.text));
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = '🗑️';
+                    deleteBtn.title = 'Удалить';
+                    deleteBtn.addEventListener('click', () => deleteMessage(msg._id));
+
+                    controls.appendChild(editBtn);
+                    controls.appendChild(deleteBtn);
+                    messageEl.appendChild(controls);
+                }
+
+                if (msg.isEdited) {
+                    const editedLabel = document.createElement('div');
+                    editedLabel.className = 'edited-label';
+                    editedLabel.textContent = '(изменено)';
+                    messageEl.appendChild(editedLabel);
+                }
+            }
+
+            async function deleteMessage(messageId) {
+                if (confirm('Вы уверены, что хотите удалить это сообщение?')) {
+                    try {
+                        const response = await fetch(`/message/${messageId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': localStorage.getItem('token')
+                            }
+                        });
+                        if (!response.ok) {
+                            const data = await response.json();
+                            throw new Error(data.message);
+                        }
+                    } catch (err) {
+                        alert('Ошибка при удалении: ' + err.message);
+                    }
+                }
+            }
+
+            function editMessage(messageId, currentText) {
+                const newText = prompt('Редактировать сообщение:', currentText);
+                if (newText !== null && newText !== currentText) {
+                    fetch(`/message/${messageId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': localStorage.getItem('token')
+                        },
+                        body: JSON.stringify({ text: newText })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw err; });
+                        }
+                        return response.json();
+                    })
+                    .catch(err => {
+                        alert('Ошибка при редактировании: ' + (err.message || err));
+                    });
+                }
+            }
+
+            function joinRoom(room) {
+                currentRoom = room;
+                let roomName;
+                if (room.startsWith('private_')) {
+                    roomName = `💬 ${privateChats[room]?.username || 'Личный чат'}`;
+                } else if (room === 'ai_chat') {
+                    roomName = '🤖 Чат с ИИ';
+                } else {
+                    roomName = room === 'general' ? 'Общий чат' :
+                              room === 'random' ? 'Случайные темы' : 'Поддержка';
+                }
+
+                currentRoomEl.textContent = roomName;
+
+                document.querySelectorAll('.room').forEach(el => {
+                    el.classList.toggle('active', el.dataset.room === room);
+                });
+
+                ws.send(JSON.stringify({
+                    type: 'join',
+                    room: room
+                }));
+            }
+        });
+    </script>
+</body>
+</html>

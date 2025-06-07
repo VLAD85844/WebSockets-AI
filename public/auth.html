@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космический Чат | Вход</title>
+    <link rel="stylesheet" href="styles/auth.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="twinkling"></div>
+    <div class="clouds"></div>
+
+    <div class="auth-container">
+        <div class="logo">
+            <h1>Космический Чат</h1>
+            <p>Общайтесь со всей вселенной</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="login">Вход</button>
+            <button class="tab-btn" data-tab="register">Регистрация</button>
+        </div>
+
+        <div class="tab-content active" id="login-tab">
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="email" id="login-email" placeholder=" " required>
+                    <label for="login-email">Email</label>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="login-password" placeholder=" " required>
+                    <label for="login-password">Пароль</label>
+                </div>
+                <button type="submit" class="btn">Войти</button>
+            </form>
+        </div>
+
+        <div class="tab-content" id="register-tab">
+            <form id="register-form">
+                <div class="form-group">
+                    <input type="text" id="register-username" placeholder=" " required>
+                    <label for="register-username">Имя пользователя</label>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="register-email" placeholder=" " required>
+                    <label for="register-email">Email</label>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="register-password" placeholder=" " required>
+                    <label for="register-password">Пароль</label>
+                </div>
+                <button type="submit" class="btn">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+
+            // Обработка входа
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await response.json();
+
+                    if (data.token) {
+                        localStorage.setItem('token', data.token);
+                        const userResponse = await fetch('/profile', {
+                            headers: { 'Authorization': data.token }
+                        });
+                        const userData = await userResponse.json();
+                        localStorage.setItem('username', userData.username);
+                        localStorage.setItem('userId', userData._id);
+                        window.location.href = '/chat';
+                    } else {
+                        alert('Ошибка: ' + data.message);
+                    }
+                } catch (err) {
+                    alert('Ошибка соединения');
+                }
+            });
+
+            // Обработка регистрации
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('register-username').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+
+                try {
+                    const response = await fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, email, password })
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert('Регистрация успешна! Теперь войдите в систему.');
+                        document.querySelector('.tab-btn[data-tab="login"]').click();
+                    } else {
+                        alert('Ошибка: ' + data.message);
+                    }
+                } catch (err) {
+                    alert('Ошибка соединения');
+                }
+            });
+            if (localStorage.getItem('token')) {
+                window.location.href = '/chat';
+            }
+        });
+    </script>
+</body>
+</html>
